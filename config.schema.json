@@ -1,15 +1,28 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "MertikFireplace",
   "pluginType": "platform",
   "singular": true,
+  "headerDisplay": "Fireplaces are exposed as separate accessories, each fireplace needs to be configured correctly, with a static ip.",
   "schema": {
-    "type": "object",
-    "properties": {
-      "name": {
-        "title": "Name",
-        "type": "string",
-        "required": true,
-        "default": "Example Dynamic Platform"
+    "fireplaces": {
+      "type": "array",
+      "items": {
+        "title": "Fireplace",
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name of the fireplace",
+            "type": "string",
+            "placeholder": "Fireplace"
+          },
+          "ip": {
+            "title": "IP of the devices, should be static",
+            "type": "string",
+            "placeholder": "192.168.x.x",
+            "required": true,
+            "description": "See: https://github.com/tritter/homebridge-mertik-fireplace#ip"
+          }
+        }
       }
     }
   }

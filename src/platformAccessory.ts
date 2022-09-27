@@ -1,141 +1,150 @@
-import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
-
-import { ExampleHomebridgePlatform } from './platform';
+import { CharacteristicValue, PlatformAccessory } from 'homebridge';
+import { FireplaceController } from './controllers/fireplaceController';
+import { IRequestController, RequestController } from './controllers/requestController';
+import { IServiceController, ServiceController } from './controllers/serviceController';
+import { AuxModeUtils } from './models/auxMode';
+import { FireplaceStatus } from './models/fireplaceStatus';
+import { FlameHeightUtils } from './models/FlameHeight';
+import { OperationMode, OperationModeUtils } from './models/operationMode';
+import { MertikPlatform } from './platform';
 
 /**
  * Platform Accessory
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export class ExamplePlatformAccessory {
-  private service: Service;
-
-  /**
-   * These are just used to create a working example
-   * You should implement your own code to track the state of your accessory
-   */
-  private exampleStates = {
-    On: false,
-    Brightness: 100,
-  };
+export class FireplacePlatformAccessory {
+  private readonly _fireplace: FireplaceController;
+  private readonly _request: IRequestController;
+  private readonly _service: IServiceController;
 
   constructor(
-    private readonly platform: ExampleHomebridgePlatform,
-    private readonly accessory: PlatformAccessory,
+    private readonly platform: MertikPlatform,
+    accessory: PlatformAccessory,
   ) {
-
-    // set accessory information
-    this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Default-Manufacturer')
-      .setCharacteristic(this.platform.Characteristic.Model, 'Default-Model')
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, 'Default-Serial');
-
-    // get the LightBulb service if it exists, otherwise create a new LightBulb service
-    // you can create multiple services for each accessory
-    this.service = this.accessory.getService(this.platform.Service.Lightbulb) || this.accessory.addService(this.platform.Service.Lightbulb);
-
-    // set the service name, this is what is displayed as the default name on the Home app
-    // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
-    this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.exampleDisplayName);
-
-    // each service must implement at-minimum the "required characteristics" for the given service type
-    // see https://developers.homebridge.io/#/service/Lightbulb
-
-    // register handlers for the On/Off Characteristic
-    this.service.getCharacteristic(this.platform.Characteristic.On)
-      .onSet(this.setOn.bind(this))                // SET - bind to the `setOn` method below
-      .onGet(this.getOn.bind(this));               // GET - bind to the `getOn` method below
-
-    // register handlers for the Brightness Characteristic
-    this.service.getCharacteristic(this.platform.Characteristic.Brightness)
-      .onSet(this.setBrightness.bind(this));       // SET - bind to the 'setBrightness` method below
-
-    /**
-     * Creating multiple services of the same type.
-     *
-     * To avoid "Cannot add a Service with the same UUID another Service without also defining a unique 'subtype' property." error,
-     * when creating multiple services of the same type, you need to use the following syntax to specify a name and subtype id:
-     * this.accessory.getService('NAME') || this.accessory.addService(this.platform.Service.Lightbulb, 'NAME', 'USER_DEFINED_SUBTYPE_ID');
-     *
-     * The USER_DEFINED_SUBTYPE must be unique to the platform accessory (if you platform exposes multiple accessories, each accessory
-     * can use the same sub type id.)
-     */
-
-    // Example: add two "motion sensor" services to the accessory
-    const motionSensorOneService = this.accessory.getService('Motion Sensor One Name') ||
-      this.accessory.addService(this.platform.Service.MotionSensor, 'Motion Sensor One Name', 'YourUniqueIdentifier-1');
-
-    const motionSensorTwoService = this.accessory.getService('Motion Sensor Two Name') ||
-      this.accessory.addService(this.platform.Service.MotionSensor, 'Motion Sensor Two Name', 'YourUniqueIdentifier-2');
-
-    /**
-     * Updating characteristics values asynchronously.
-     *
-     * Example showing how to update the state of a Characteristic asynchronously instead
-     * of using the `on('get')` handlers.
-     * Here we change update the motion sensor trigger states on and off every 10 seconds
-     * the `updateCharacteristic` method.
-     *
-     */
-    let motionDetected = false;
-    setInterval(() => {
-      // EXAMPLE - inverse the trigger
-      motionDetected = !motionDetected;
-
-      // push the new value to HomeKit
-      motionSensorOneService.updateCharacteristic(this.platform.Characteristic.MotionDetected, motionDetected);
-      motionSensorTwoService.updateCharacteristic(this.platform.Characteristic.MotionDetected, !motionDetected);
-
-      this.platform.log.debug('Triggering motionSensorOneService:', motionDetected);
-      this.platform.log.debug('Triggering motionSensorTwoService:', !motionDetected);
-    }, 10000);
+    this._fireplace = new FireplaceController(platform.log, accessory);
+    this._request = new RequestController(platform.log, this._fireplace);
+    this._service = new ServiceController(platform.log, accessory, platform);
+    this.subscribeFireplace();
+    this.subscribeService();
   }
 
-  /**
-   * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of an accessory, for example, turning on a Light bulb.
-   */
-  async setOn(value: CharacteristicValue) {
-    // implement your own code to turn your device on/off
-    this.exampleStates.On = value as boolean;
-
-    this.platform.log.debug('Set Characteristic On ->', value);
+  subscribeFireplace() {
+    this._fireplace.on('status', (status) => {
+      this.platform.log.info(`Received status - ${status}`);
+      this.updateActive(status);
+      if (!status.igniting && !status.shutdown) {
+        this.updateCurrentHeatingCoolerState(status);
+        this.updateTargetHeatingCoolerState(status);
+        this.updateCurrentTemperature(status);
+      }
+      this.updateSwingMode(status);
+      this.updateHeatingThresholdTemperature(status);
+    });
   }
 
-  /**
-   * Handle the "GET" requests from HomeKit
-   * These are sent when HomeKit wants to know the current state of the accessory, for example, checking if a Light bulb is on.
-   *
-   * GET requests should return as fast as possbile. A long delay here will result in
-   * HomeKit being unresponsive and a bad user experience in general.
-   *
-   * If your device takes time to respond you should update the status of your device
-   * asynchronously instead using the `updateCharacteristic` method instead.
+  subscribeService() {
+    this._service.activeCharacteristic()
+      .onGet(() => this.activeValue(this.getStatus()))
+      .onSet((value) => {
+        this.platform.log.debug('activeCharacteristic onSet');
+        const status = this.getStatus();
+        if (value === this.platform.Characteristic.Active.ACTIVE && status.mode === OperationMode.Off
+          || value === this.platform.Characteristic.Active.INACTIVE && status.mode !== OperationMode.Off) {
+          this._request.setMode(OperationModeUtils.ofActive(this.platform, value,
+            this._service.targetHeaterCoolerStateCharacteristic().value || this.platform.Characteristic.TargetHeaterCoolerState.AUTO));
+        }
+      });
+    this._service.currentHeaterCoolerStateCharacteristic()
+      .onGet(() => this.heaterCoolerStateValue(this.getStatus()));
 
-   * @example
-   * this.service.updateCharacteristic(this.platform.Characteristic.On, true)
-   */
-  async getOn(): Promise<CharacteristicValue> {
-    // implement your own code to check if the device is on
-    const isOn = this.exampleStates.On;
+    this._service.targetHeaterCoolerStateCharacteristic()
+      .onGet(() => this.targetHeaterCoolerStateValue(this.getStatus()))
+      .onSet((value) => {
+        this.platform.log.debug('targetHeaterCoolerStateCharacteristic onSet');
+        this._request.setMode(OperationModeUtils.ofHeaterCoolerState(this.platform, value));
+      });
 
-    this.platform.log.debug('Get Characteristic On ->', isOn);
+    this._service.lockControlsCharacteristic()
+      .onGet(() => this._request.locked())
+      .onSet((value) => value === this.platform.Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED ?
+        this._request.lock() : this._request.unlock());
 
-    // if you need to return an error to show the device as "Not Responding" in the Home app:
-    // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    this._service.swingModeCharacteristic()
+      .onGet(() => this.swingModeValue(this.getStatus()))
+      .onSet((value) => this._request.setAux(AuxModeUtils.fromSwingMode(this.platform, value)));
 
-    return isOn;
+    this._service.heatingThresholdTemperatureCharacteristic()
+      .onGet(() => this.heatingThresholdValue(this.getStatus()))
+      .onSet((value) => {
+        const percentage = ((value as number) - 5) / 31;
+        this.platform.log.debug(`Set flame height to percentage: ${percentage}`);
+        this._request.setFlameHeight(FlameHeightUtils.ofPercentage(percentage));
+        this._request.setTemperature(value as number);
+      });
   }
 
-  /**
-   * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of an accessory, for example, changing the Brightness
-   */
-  async setBrightness(value: CharacteristicValue) {
-    // implement your own code to set the brightness
-    this.exampleStates.Brightness = value as number;
-
-    this.platform.log.debug('Set Characteristic Brightness -> ', value);
+  private getStatus(): FireplaceStatus {
+    if (!this._fireplace.reachable()) {
+      this.platform.log.debug('Device not connected!');
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
+    const status = this._fireplace.status();
+    if (!status) {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.RESOURCE_BUSY);
+    }
+    return status!;
   }
 
+  // Update handlers
+
+  private updateActive(status: FireplaceStatus) {
+    this._service.activeCharacteristic().updateValue(this.activeValue(status));
+  }
+
+  private updateCurrentHeatingCoolerState(status: FireplaceStatus) {
+    this._service.currentHeaterCoolerStateCharacteristic().updateValue(this.heaterCoolerStateValue(status));
+  }
+
+  private updateTargetHeatingCoolerState(status: FireplaceStatus) {
+    this._service.targetHeaterCoolerStateCharacteristic().updateValue(this.targetHeaterCoolerStateValue(status));
+  }
+
+  private updateCurrentTemperature(status: FireplaceStatus) {
+    this._service.currentTemperatureCharacteristic().updateValue(status.currentTemperature);
+  }
+
+  private updateSwingMode(status: FireplaceStatus) {
+    this._service.swingModeCharacteristic().updateValue(this.swingModeValue(status));
+  }
+
+  private updateHeatingThresholdTemperature(status: FireplaceStatus) {
+    this._service.heatingThresholdTemperatureCharacteristic().updateValue(this.heatingThresholdValue(status));
+  }
+
+  // CharacteristicValues
+
+  private activeValue(status: FireplaceStatus): CharacteristicValue {
+    return OperationModeUtils.toActive(this.platform, status);
+  }
+
+  private swingModeValue(status: FireplaceStatus): CharacteristicValue {
+    return AuxModeUtils.toSwingMode(this.platform, status.auxOn);
+  }
+
+  private heaterCoolerStateValue(status: FireplaceStatus): CharacteristicValue {
+    return OperationModeUtils.toHeatingCoolerState(this.platform, status);
+  }
+
+  private targetHeaterCoolerStateValue(status: FireplaceStatus): CharacteristicValue {
+    return OperationModeUtils.toTargetHeaterCoolerState(this.platform, status.mode);
+  }
+
+  private heatingThresholdValue(status: FireplaceStatus): CharacteristicValue {
+    let targetTemperature = status.targetTemperature;
+    if (status.mode === OperationMode.Manual) {
+      targetTemperature = Math.round((FlameHeightUtils.toPercentage(status.height) * 31 + 5));
+    }
+    return targetTemperature;
+  }
 }
