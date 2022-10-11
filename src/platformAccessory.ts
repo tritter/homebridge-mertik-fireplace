@@ -4,7 +4,7 @@ import { IRequestController, RequestController } from './controllers/requestCont
 import { IServiceController, ServiceController } from './controllers/serviceController';
 import { AuxModeUtils } from './models/auxMode';
 import { FireplaceStatus } from './models/fireplaceStatus';
-import { FlameHeightUtils } from './models/FlameHeight';
+import { FlameHeight, FlameHeightUtils } from './models/FlameHeight';
 import { OperationMode, OperationModeUtils } from './models/operationMode';
 import { MertikPlatform } from './platform';
 
@@ -125,25 +125,58 @@ export class FireplacePlatformAccessory {
   // CharacteristicValues
 
   private activeValue(status: FireplaceStatus): CharacteristicValue {
-    return OperationModeUtils.toActive(this.platform, status);
+    const currentRequest = this._request.currentRequest();
+    if (currentRequest?.mode) {
+      const requestedMode = currentRequest?.mode || OperationMode.Manual;
+      return OperationModeUtils.toActive(this.platform, requestedMode, status.igniting, status.shuttingDown);
+    }
+    return OperationModeUtils.toActive(this.platform, status.mode, status.igniting, status.shuttingDown);
   }
 
   private swingModeValue(status: FireplaceStatus): CharacteristicValue {
+    const currentRequest = this._request.currentRequest();
+    if (currentRequest?.auxOn) {
+      const requestedAux = currentRequest?.auxOn || false;
+      return AuxModeUtils.toSwingMode(this.platform, requestedAux);
+    }
     return AuxModeUtils.toSwingMode(this.platform, status.auxOn);
   }
 
   private heaterCoolerStateValue(status: FireplaceStatus): CharacteristicValue {
-    return OperationModeUtils.toHeatingCoolerState(this.platform, status);
+    const currentRequest = this._request.currentRequest();
+    if (currentRequest?.mode) {
+      const requestedMode = currentRequest?.mode || OperationMode.Manual;
+      return OperationModeUtils.toHeatingCoolerState(this.platform, requestedMode, status.guardFlameOn);
+    }
+    return OperationModeUtils.toHeatingCoolerState(this.platform, status.mode, status.guardFlameOn);
   }
 
   private targetHeaterCoolerStateValue(status: FireplaceStatus): CharacteristicValue {
+    const currentRequest = this._request.currentRequest();
+    if (currentRequest?.mode) {
+      const requestedMode = currentRequest?.mode || OperationMode.Manual;
+      return OperationModeUtils.toTargetHeaterCoolerState(this.platform, requestedMode);
+    }
     return OperationModeUtils.toTargetHeaterCoolerState(this.platform, status.mode);
   }
 
   private heatingThresholdValue(status: FireplaceStatus): CharacteristicValue {
+    const currentRequest = this._request.currentRequest();
+    if (currentRequest?.temperature && currentRequest?.height) {
+      let operationMode = status.mode;
+      if (currentRequest?.mode) {
+        operationMode = currentRequest?.mode || OperationMode.Manual;
+      }
+      let targetTemperature = currentRequest?.temperature || 36;
+      if (operationMode === OperationMode.Manual) {
+        targetTemperature = Math.round((FlameHeightUtils
+          .toPercentage(currentRequest?.height || FlameHeight.Step11) * 31 + 5));
+      }
+      return targetTemperature;
+    }
     let targetTemperature = status.targetTemperature;
     if (status.mode === OperationMode.Manual) {
-      targetTemperature = Math.round((FlameHeightUtils.toPercentage(status.height) * 31 + 5));
+      targetTemperature = Math.round((FlameHeightUtils.toPercentage(this._fireplace.getFlameHeight()) * 31 + 5));
     }
     return targetTemperature;
   }

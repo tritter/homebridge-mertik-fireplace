@@ -1,6 +1,5 @@
 import { CharacteristicValue } from 'homebridge';
 import { MertikPlatform } from '../platform';
-import { FireplaceStatus } from './fireplaceStatus';
 
 export enum OperationMode {
     Off = 1,
@@ -21,8 +20,7 @@ export class OperationModeUtils {
     }
   }
 
-  public static toHeatingCoolerState(platform: MertikPlatform, status: FireplaceStatus) : CharacteristicValue {
-    const mode = status.mode;
+  public static toHeatingCoolerState(platform: MertikPlatform, mode: OperationMode, guardFlameOn: boolean) : CharacteristicValue {
     let state = platform.Characteristic.CurrentHeaterCoolerState.INACTIVE;
     switch(mode) {
       case OperationMode.Temperature:
@@ -35,7 +33,7 @@ export class OperationModeUtils {
         state = platform.Characteristic.CurrentHeaterCoolerState.HEATING;
         break;
       default:
-        state = status.guardFlameOn ? platform.Characteristic.CurrentHeaterCoolerState.IDLE
+        state = guardFlameOn ? platform.Characteristic.CurrentHeaterCoolerState.IDLE
           : platform.Characteristic.CurrentHeaterCoolerState.INACTIVE;
         break;
     }
@@ -65,8 +63,8 @@ export class OperationModeUtils {
     }
   }
 
-  public static toActive(platform: MertikPlatform, status: FireplaceStatus): CharacteristicValue {
-    return status.mode === OperationMode.Off && !status.igniting && !status.guardFlameOn
+  public static toActive(platform: MertikPlatform, mode: OperationMode, igniting: boolean, shuttingDown: boolean): CharacteristicValue {
+    return mode === OperationMode.Off && (!igniting || shuttingDown)
       ? platform.Characteristic.Active.INACTIVE : platform.Characteristic.Active.ACTIVE;
   }
 

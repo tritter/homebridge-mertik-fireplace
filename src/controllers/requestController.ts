@@ -12,6 +12,7 @@ export interface IRequestController {
     setMode(mode: OperationMode): void;
     setTemperature(temperature: number): void;
     locked(): boolean;
+    currentRequest(): IRequest | undefined;
 }
 
 export class RequestController implements IRequestController{
@@ -27,6 +28,10 @@ export class RequestController implements IRequestController{
 
   private isAllowed(): boolean {
     return !this._locked;
+  }
+
+  currentRequest() {
+    return this._scheduledRequest;
   }
 
   lock() {
@@ -80,12 +85,13 @@ export class RequestController implements IRequestController{
       this.log.info('Parental controls active, action is not allowed!');
       return;
     }
-    this.log.info(`Request: ${JSON.stringify(request)}`);
+    this.log.debug(`Request: ${JSON.stringify(request)}`);
     this._busy = true;
     const success = await this.fireplace.request(request);
     if (!success) {
       this.scheduleRequest(request);
     }
+    this._scheduledRequest = undefined;
     this._busy = false;
   }
 }
