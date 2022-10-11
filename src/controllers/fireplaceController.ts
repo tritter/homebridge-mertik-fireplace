@@ -39,8 +39,8 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
   }
 
   private startStatusSubscription(): void {
-    this.log.debug('Start requesting status');
     this.stopStatusSubscription();
+    this.log.debug('Start requesting status');
     this._client = null;
     this._statusTimer = setInterval((e) => e.refreshStatus(), FireplaceController.REFRESH_TIMEOUT, this);
   }
