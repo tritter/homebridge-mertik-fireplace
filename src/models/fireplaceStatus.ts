@@ -1,5 +1,4 @@
 import { OperationMode } from './operationMode';
-import { FlameHeight } from './FlameHeight';
 
 export class FireplaceStatus {
   public readonly auxOn: boolean = false;
