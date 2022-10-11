@@ -20,6 +20,7 @@ export interface IFireplaceEvents {
 
 export class FireplaceController extends EventEmitter implements IFireplaceController, IFireplaceEvents {
   private readonly _config: IDeviceConfig;
+  private _height = FlameHeight.Step11;
   private _statusTimer: NodeJS.Timer | undefined;
   private _client: Socket | null = null;
   private _lastContact: Date = new Date();
@@ -38,11 +39,14 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
   }
 
   private startStatusSubscription(): void {
+    this.log.debug('Start requesting status');
     this.stopStatusSubscription();
+    this._client = null;
     this._statusTimer = setInterval((e) => e.refreshStatus(), FireplaceController.REFRESH_TIMEOUT, this);
   }
 
   private stopStatusSubscription() {
+    this.log.debug('Stop requesting status');
     if (this._statusTimer) {
       clearInterval(this._statusTimer);
       this._statusTimer = undefined;
@@ -58,8 +62,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
   }
 
   private processStatusResponse(response: string) {
-    const oldHeight = this._lastStatus?.height ?? FlameHeight.Step0;
-    const newStatus = new FireplaceStatus(response, oldHeight);
+    const newStatus = new FireplaceStatus(response);
     this._lastContact = new Date();
     this._igniting = newStatus.igniting;
     this._shuttingDown = newStatus.shuttingDown;
@@ -75,6 +78,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
     this._igniting = true;
     this.sendCommand('314103');
     await this.delay(40_000);
+    this.refreshStatus();
   }
 
   private async guardFlameOff() {
@@ -154,11 +158,16 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
 
   async setFlameHeight(height: FlameHeight) {
     this.log.info(`Set flame height to ${height.toString()}`);
+    this._height = height;
     this.resetFlameHeight();
     await this.delay(10_000);
     const msg = '3136' + height + '03';
     this.sendCommand(msg);
-    this.refreshStatus();
+    await this.delay(1_000);
+  }
+
+  getFlameHeight(): FlameHeight {
+    return this._height;
   }
 
   async setTemperature(temperature: number) {
@@ -185,6 +194,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
     if (OperationModeUtils.needsIgnite(mode) && currentMode === OperationMode.Off && !this._lastStatus?.guardFlameOn) {
       this.log.info('Ignite fireplace');
       await this.igniteFireplace();
+      return false;
     }
     if (currentMode === mode) {
       this.log.debug('Ignore same mode!');
@@ -215,20 +225,23 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
   }
 
   async request(request: IRequest): Promise<boolean> {
+    let succeeds = true;
     this.stopStatusSubscription();
     if (request.mode) {
-      if (!await this.setMode(request)) {
-        return false;
-      }
+      succeeds = await this.setMode(request);
     } else if (request.temperature && request.mode === OperationMode.Temperature) {
       await this.setTemperature(request.temperature);
     } else if (request.height && request.mode === OperationMode.Manual) {
+      await this.setFlameHeight(request.height);
+    } else if (request.temperature && this._lastStatus?.mode === OperationMode.Temperature) {
+      await this.setTemperature(request.temperature);
+    } else if (request.height && this._lastStatus?.mode === OperationMode.Manual) {
       await this.setFlameHeight(request.height);
     } else if (request.auxOn) {
       this.setAux(request.auxOn);
     }
     await this.delay(5_000);
     this.startStatusSubscription();
-    return true;
+    return succeeds;
   }
 }

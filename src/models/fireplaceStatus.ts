@@ -9,19 +9,8 @@ export class FireplaceStatus {
   public readonly igniting: boolean = false;
   public readonly guardFlameOn: boolean = false;
   public readonly shuttingDown: boolean = false;
-  public height: FlameHeight = FlameHeight.Step0;
 
-  constructor(status: string, oldHeight: FlameHeight) {
-    let flameHeight = (parseInt('0x' + status.substring(14, 16)));
-    if (flameHeight < 128) {
-      this.height = FlameHeight.Step0;
-    } else if (flameHeight === 255) {
-      //ignore, this seems a bug from the fireplace, everytime it turns to max.
-      this.height = oldHeight;
-    }else{
-      flameHeight = Math.round(((flameHeight - 128) / (255 - 128)) * 11);
-      this.height = Object.values(FlameHeight)[flameHeight];
-    }
+  constructor(status: string) {
     const modeBits = status.substring(24, 25);
     const statusBits = status.substring(16, 20);
     this.shuttingDown = fromBitStatus(statusBits, 7);
@@ -43,7 +32,6 @@ export class FireplaceStatus {
           +`target:${this.targetTemperature} `
           +`aux:${this.auxOn} `
           +`current:${this.currentTemperature} `
-          +`height:${FlameHeight[this.height]} `
           +`shutdown:${this.shuttingDown} `
           +`guardOn:${this.guardFlameOn} `;
   }
