@@ -1,5 +1,5 @@
 import { Logger } from 'homebridge';
-import { FlameHeight } from '../models/FlameHeight';
+import { FlameHeight } from '../models/flameHeight';
 import { OperationMode } from '../models/operationMode';
 import { IRequest } from '../models/request';
 import { IFireplaceController } from './fireplaceController';

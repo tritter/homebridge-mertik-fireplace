@@ -3,7 +3,7 @@ import EventEmitter from 'events';
 import net, { Socket } from 'net';
 import { FireplaceStatus } from '../models/fireplaceStatus';
 import { OperationMode, OperationModeUtils } from '../models/operationMode';
-import { FlameHeight } from '../models/FlameHeight';
+import { FlameHeight } from '../models/flameHeight';
 import { Logger, PlatformAccessory } from 'homebridge';
 import { TemperatureRangeUtils } from '../models/temperatureRange';
 import { IRequest } from '../models/request';

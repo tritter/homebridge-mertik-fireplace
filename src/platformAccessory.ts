@@ -4,7 +4,7 @@ import { IRequestController, RequestController } from './controllers/requestCont
 import { IServiceController, ServiceController } from './controllers/serviceController';
 import { AuxModeUtils } from './models/auxMode';
 import { FireplaceStatus } from './models/fireplaceStatus';
-import { FlameHeight, FlameHeightUtils } from './models/FlameHeight';
+import { FlameHeight, FlameHeightUtils } from './models/flameHeight';
 import { OperationMode, OperationModeUtils } from './models/operationMode';
 import { MertikPlatform } from './platform';
 

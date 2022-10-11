@@ -1,4 +1,4 @@
-import { FlameHeight } from './FlameHeight';
+import { FlameHeight } from './flameHeight';
 import { OperationMode } from './operationMode';
 
 export interface IRequest {
