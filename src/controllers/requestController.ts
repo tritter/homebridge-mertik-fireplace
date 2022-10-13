@@ -16,14 +16,15 @@ export interface IRequestController {
 }
 
 export class RequestController implements IRequestController{
-  private _locked = false;
   private _busy = false;
   private _scheduledRequest?: IRequest;
   private _sendTask?: NodeJS.Timer;
 
   constructor(
     public readonly log: Logger,
-    public readonly fireplace: IFireplaceController) {
+    public readonly fireplace: IFireplaceController,
+    private _locked = false) {
+
   }
 
   private isAllowed(): boolean {

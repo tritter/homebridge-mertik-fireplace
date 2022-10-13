@@ -20,13 +20,17 @@ export class FireplacePlatformAccessory {
 
   constructor(
     private readonly platform: MertikPlatform,
-    accessory: PlatformAccessory,
+    private readonly accessory: PlatformAccessory,
   ) {
     this._fireplace = new FireplaceController(platform.log, accessory);
-    this._request = new RequestController(platform.log, this._fireplace);
     this._service = new ServiceController(platform.log, accessory, platform);
+    this._request = new RequestController(platform.log, this._fireplace, this.isLocked());
     this.subscribeFireplace();
     this.subscribeService();
+  }
+
+  private isLocked(): boolean {
+    return this._service.lockControlsCharacteristic()?.value === this.platform.Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED;
   }
 
   subscribeFireplace() {
