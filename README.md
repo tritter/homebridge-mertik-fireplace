@@ -1,5 +1,5 @@
 # homebridge-mertik-fireplace
-<!-- [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins) -->
+[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 [![npm](https://img.shields.io/npm/v/homebridge-mertik-fireplace.svg)](https://www.npmjs.com/package/homebridge-mertik-fireplace) [![npm](https://img.shields.io/npm/dt/homebridge-mertik-fireplace.svg)](https://www.npmjs.com/package/homebridge-mertik-fireplace)
 
 <img src="https://github.com/tritter/homebridge-mertik-fireplace/blob/master/.img/sample.jpg?raw=true" height=250 >
