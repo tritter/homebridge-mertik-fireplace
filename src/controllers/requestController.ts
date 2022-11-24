@@ -86,7 +86,7 @@ export class RequestController implements IRequestController{
 
     const mergedRequest = this._scheduledRequest ? {...this._scheduledRequest, ...request} : request;
     this._scheduledRequest = mergedRequest;
-    this._sendTask = setInterval(() => this.sendRequest(mergedRequest), 2_500);
+    this._sendTask = setInterval(() => this.sendRequest(mergedRequest), 5_000);
   }
 
   private async sendRequest(request: IRequest, retry = false) {
