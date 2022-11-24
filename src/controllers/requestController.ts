@@ -19,6 +19,7 @@ export class RequestController implements IRequestController{
   private _busy = false;
   private _scheduledRequest?: IRequest;
   private _sendTask?: NodeJS.Timer;
+  private _lockTask?: NodeJS.Timer;
 
   constructor(
     public readonly log: Logger,
@@ -35,14 +36,24 @@ export class RequestController implements IRequestController{
     return this._scheduledRequest;
   }
 
+  clearScheduledLock() {
+    clearInterval(this._lockTask);
+    this._lockTask = undefined;
+  }
+
   lock() {
-    this.log.info('Lock controls');
-    this._locked = true;
+    this.clearScheduledLock();
+    this.log.info('Lock control after 1 minute (makes sure that automations still run through.');
+    this._sendTask = setTimeout(() => {
+      this._locked = true; this.log.info('Locked controls');
+    }, 60_000);
   }
 
   unlock() {
-    this.log.info('Unlock controls');
+    this.clearScheduledLock();
     this._locked = false;
+    this.log.info('Unlocked controls');
+
   }
 
   locked = () => this._locked;
@@ -78,12 +89,18 @@ export class RequestController implements IRequestController{
     this._sendTask = setInterval(() => this.sendRequest(mergedRequest), 2_500);
   }
 
-  private async sendRequest(request: IRequest) {
+  private async sendRequest(request: IRequest, retry = false) {
     if (!this._busy) {
       this.clearScheduledTask();
     }
     if (!this.isAllowed()) {
+      if (!retry) {
+        setTimeout(() => this.sendRequest(request, true), 5_000);
+        return;
+      }
+
       this.log.info('Parental controls active, action is not allowed!');
+      this._scheduledRequest = undefined;
       return;
     }
     this.log.debug(`Request: ${JSON.stringify(request)}`);
