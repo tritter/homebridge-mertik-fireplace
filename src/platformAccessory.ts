@@ -79,7 +79,16 @@ export class FireplacePlatformAccessory {
       .onSet((value) => this._request.setAux(AuxModeUtils.fromSwingMode(this.platform, value)));
 
     this._service.heatingThresholdTemperatureCharacteristic()
-      .onGet(() => this.heatingThresholdValue(this.getStatus()))
+      .onGet(() => this.targetThresholdValue(this.getStatus()))
+      .onSet((value) => {
+        const percentage = ((value as number) - 5) / 31;
+        this.platform.log.debug(`Set flame height to percentage: ${percentage}`);
+        this._request.setFlameHeight(FlameHeightUtils.ofPercentage(percentage));
+        this._request.setTemperature(value as number);
+      });
+
+    this._service.coolingThresholdTemperatureCharacteristic()
+      .onGet(() => this.targetThresholdValue(this.getStatus()))
       .onSet((value) => {
         const percentage = ((value as number) - 5) / 31;
         this.platform.log.debug(`Set flame height to percentage: ${percentage}`);
@@ -123,18 +132,24 @@ export class FireplacePlatformAccessory {
   }
 
   private updateHeatingThresholdTemperature(status: FireplaceStatus) {
-    this._service.heatingThresholdTemperatureCharacteristic().updateValue(this.heatingThresholdValue(status));
+    this._service.heatingThresholdTemperatureCharacteristic().updateValue(this.targetThresholdValue(status));
+  }
+
+  private updateCoolingThresholdTemperature(status: FireplaceStatus) {
+    this._service.coolingThresholdTemperatureCharacteristic().updateValue(this.targetThresholdValue(status));
   }
 
   // CharacteristicValues
 
   private activeValue(status: FireplaceStatus): CharacteristicValue {
     const currentRequest = this._request.currentRequest();
+    let mode = status.mode;
     if (currentRequest?.mode) {
       const requestedMode = currentRequest?.mode || OperationMode.Manual;
-      return OperationModeUtils.toActive(this.platform, requestedMode, status.igniting, status.shuttingDown);
+      // Override mode with requested mode to not flicker the interface.
+      mode = requestedMode;
     }
-    return OperationModeUtils.toActive(this.platform, status.mode, status.igniting, status.shuttingDown);
+    return OperationModeUtils.toActive(this.platform, mode, status.igniting, status.shuttingDown);
   }
 
   private swingModeValue(status: FireplaceStatus): CharacteristicValue {
@@ -164,7 +179,7 @@ export class FireplacePlatformAccessory {
     return OperationModeUtils.toTargetHeaterCoolerState(this.platform, status.mode);
   }
 
-  private heatingThresholdValue(status: FireplaceStatus): CharacteristicValue {
+  private targetThresholdValue(status: FireplaceStatus): CharacteristicValue {
     const currentRequest = this._request.currentRequest();
     if (currentRequest?.temperature && currentRequest?.height) {
       let operationMode = status.mode;

@@ -207,6 +207,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
         this.setFlameHeight(FlameHeight.Step11);
         break;
       case OperationMode.Eco:
+        this.setFlameHeight(FlameHeight.Step11);
         this.setEcoMode();
         break;
       case OperationMode.Temperature:
@@ -231,11 +232,12 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
       succeeds = await this.setMode(request);
     } else if (request.temperature && request.mode === OperationMode.Temperature) {
       await this.setTemperature(request.temperature);
-    } else if (request.height && request.mode === OperationMode.Manual) {
+    } else if (request.height && (request.mode === OperationMode.Manual || request.mode === OperationMode.Eco)) {
       await this.setFlameHeight(request.height);
-    } else if (request.temperature && this._lastStatus?.mode === OperationMode.Temperature) {
+    } else if (request.temperature
+      && this._lastStatus?.mode === OperationMode.Temperature) {
       await this.setTemperature(request.temperature);
-    } else if (request.height && this._lastStatus?.mode === OperationMode.Manual) {
+    } else if (request.height && (this._lastStatus?.mode === OperationMode.Manual || this._lastStatus?.mode === OperationMode.Eco)) {
       await this.setFlameHeight(request.height);
     } else if (request.auxOn) {
       this.setAux(request.auxOn);
