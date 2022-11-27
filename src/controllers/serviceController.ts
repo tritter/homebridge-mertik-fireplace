@@ -10,7 +10,6 @@ export interface IServiceController {
     lockControlsCharacteristic(): Characteristic;
     swingModeCharacteristic(): Characteristic;
     heatingThresholdTemperatureCharacteristic(): Characteristic;
-    coolingThresholdTemperatureCharacteristic(): Characteristic;
 }
 
 export class ServiceController implements IServiceController {
@@ -38,14 +37,6 @@ export class ServiceController implements IServiceController {
       .setCharacteristic(this.platform.Characteristic.Model, 'B6R-WME')
       .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.UUID)
       .setCharacteristic(this.platform.Characteristic.Name, this._config.name ?? 'Fireplace');
-
-
-    this.coolingThresholdTemperatureCharacteristic()
-      .setProps({
-        minValue: 5.0,
-        maxValue: 36,
-        minStep: 0.5,
-      });
 
     this.heatingThresholdTemperatureCharacteristic()
       .setProps({
@@ -76,7 +67,4 @@ export class ServiceController implements IServiceController {
 
   heatingThresholdTemperatureCharacteristic = () =>
     this._service.getCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature);
-
-  coolingThresholdTemperatureCharacteristic = () =>
-    this._service.getCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature);
 }

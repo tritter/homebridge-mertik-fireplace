@@ -79,16 +79,7 @@ export class FireplacePlatformAccessory {
       .onSet((value) => this._request.setAux(AuxModeUtils.fromSwingMode(this.platform, value)));
 
     this._service.heatingThresholdTemperatureCharacteristic()
-      .onGet(() => this.targetThresholdValue(this.getStatus()))
-      .onSet((value) => {
-        const percentage = ((value as number) - 5) / 31;
-        this.platform.log.debug(`Set flame height to percentage: ${percentage}`);
-        this._request.setFlameHeight(FlameHeightUtils.ofPercentage(percentage));
-        this._request.setTemperature(value as number);
-      });
-
-    this._service.coolingThresholdTemperatureCharacteristic()
-      .onGet(() => this.targetThresholdValue(this.getStatus()))
+      .onGet(() => this.targetHeatingThresholdValue(this.getStatus()))
       .onSet((value) => {
         const percentage = ((value as number) - 5) / 31;
         this.platform.log.debug(`Set flame height to percentage: ${percentage}`);
@@ -132,11 +123,7 @@ export class FireplacePlatformAccessory {
   }
 
   private updateHeatingThresholdTemperature(status: FireplaceStatus) {
-    this._service.heatingThresholdTemperatureCharacteristic().updateValue(this.targetThresholdValue(status));
-  }
-
-  private updateCoolingThresholdTemperature(status: FireplaceStatus) {
-    this._service.coolingThresholdTemperatureCharacteristic().updateValue(this.targetThresholdValue(status));
+    this._service.heatingThresholdTemperatureCharacteristic().updateValue(this.targetHeatingThresholdValue(status));
   }
 
   // CharacteristicValues
@@ -179,7 +166,7 @@ export class FireplacePlatformAccessory {
     return OperationModeUtils.toTargetHeaterCoolerState(this.platform, status.mode);
   }
 
-  private targetThresholdValue(status: FireplaceStatus): CharacteristicValue {
+  private targetHeatingThresholdValue(status: FireplaceStatus): CharacteristicValue {
     const currentRequest = this._request.currentRequest();
     if (currentRequest?.temperature && currentRequest?.height) {
       let operationMode = status.mode;
