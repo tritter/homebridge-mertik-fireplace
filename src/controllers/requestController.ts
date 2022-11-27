@@ -5,58 +5,56 @@ import { IRequest } from '../models/request';
 import { IFireplaceController } from './fireplaceController';
 
 export interface IRequestController {
-    unlock(): void;
-    lock(): void;
-    setFlameHeight(height: FlameHeight): void;
-    setAux(on: boolean): void;
-    setMode(mode: OperationMode): void;
-    setTemperature(temperature: number): void;
-    locked(): boolean;
-    currentRequest(): IRequest | undefined;
+  locked: boolean;
+  unlock(): void;
+  lock(): void;
+  setFlameHeight(height: FlameHeight): void;
+  setAux(on: boolean): void;
+  setMode(mode: OperationMode): void;
+  setTemperature(temperature: number): void;
+  currentRequest(): IRequest | undefined;
 }
 
 export class RequestController implements IRequestController{
-  private _busy = false;
-  private _scheduledRequest?: IRequest;
-  private _sendTask?: NodeJS.Timer;
-  private _lockTask?: NodeJS.Timer;
+  private busy = false;
+  private scheduledRequest?: IRequest;
+  private sendTask?: NodeJS.Timer;
+  private lockTask?: NodeJS.Timer;
 
   constructor(
     public readonly log: Logger,
     public readonly fireplace: IFireplaceController,
-    private _locked = false) {
+    public locked = false) {
 
   }
 
   private isAllowed(): boolean {
-    return !this._locked;
+    return !this.locked;
   }
 
   currentRequest() {
-    return this._scheduledRequest;
+    return this.scheduledRequest;
   }
 
   clearScheduledLock() {
-    clearInterval(this._lockTask);
-    this._lockTask = undefined;
+    clearInterval(this.lockTask);
+    this.lockTask = undefined;
   }
 
   lock() {
     this.clearScheduledLock();
     this.log.info('Lock control after 1 minute (makes sure that automations still run through.');
-    this._sendTask = setTimeout(() => {
-      this._locked = true; this.log.info('Locked controls');
+    this.sendTask = setTimeout(() => {
+      this.locked = true; this.log.info('Locked controls');
     }, 60_000);
   }
 
   unlock() {
     this.clearScheduledLock();
-    this._locked = false;
+    this.locked = false;
     this.log.info('Unlocked controls');
 
   }
-
-  locked = () => this._locked;
 
   setFlameHeight(height: FlameHeight) {
     this.scheduleRequest({height});
@@ -75,22 +73,22 @@ export class RequestController implements IRequestController{
   }
 
   clearScheduledTask() {
-    clearInterval(this._sendTask);
-    this._sendTask = undefined;
+    clearInterval(this.sendTask);
+    this.sendTask = undefined;
   }
 
   private scheduleRequest(request: IRequest) {
-    if (this._sendTask) {
+    if (this.sendTask) {
       this.clearScheduledTask();
     }
 
-    const mergedRequest = this._scheduledRequest ? {...this._scheduledRequest, ...request} : request;
-    this._scheduledRequest = mergedRequest;
-    this._sendTask = setInterval(() => this.sendRequest(mergedRequest), 5_000);
+    const mergedRequest = this.scheduledRequest ? {...this.scheduledRequest, ...request} : request;
+    this.scheduledRequest = mergedRequest;
+    this.sendTask = setInterval(() => this.sendRequest(mergedRequest), 5_000);
   }
 
   private async sendRequest(request: IRequest, retry = false) {
-    if (!this._busy) {
+    if (!this.busy) {
       this.clearScheduledTask();
     }
     if (!this.isAllowed()) {
@@ -100,17 +98,17 @@ export class RequestController implements IRequestController{
       }
 
       this.log.info('Parental controls active, action is not allowed!');
-      this._scheduledRequest = undefined;
+      this.scheduledRequest = undefined;
       return;
     }
     this.log.debug(`Request: ${JSON.stringify(request)}`);
-    this._busy = true;
+    this.busy = true;
     const success = await this.fireplace.request(request);
     if (!success) {
       this.scheduleRequest(request);
     }
-    this._scheduledRequest = undefined;
-    this._busy = false;
+    this.scheduledRequest = undefined;
+    this.busy = false;
   }
 }
 

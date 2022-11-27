@@ -13,30 +13,30 @@ export interface IServiceController {
 }
 
 export class ServiceController implements IServiceController {
-  private readonly _config: IDeviceConfig;
-  private readonly _service: Service;
+  private readonly config: IDeviceConfig;
+  private readonly service: Service;
 
   constructor(
         public readonly log: Logger,
         public readonly accessory: PlatformAccessory,
         private readonly platform: MertikPlatform) {
-    this._config = accessory.context.device;
-    this._service = this.accessory.getService(this.platform.Service.HeaterCooler)
+    this.config = this.accessory.context.device;
+    this.service = this.accessory.getService(this.platform.Service.HeaterCooler)
       || this.accessory.addService(this.platform.Service.HeaterCooler);
     this.initCharacteristics();
   }
 
   initCharacteristics() {
-    const name = this._config.name;
+    const name = this.config.name;
     if (name.length < 2) {
-      this.platform.log.error(`The given name ${this._config.name}, is too short`);
+      this.platform.log.error(`The given name ${this.config.name}, is too short`);
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.RESOURCE_DOES_NOT_EXIST);
     }
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Mertik')
       .setCharacteristic(this.platform.Characteristic.Model, 'B6R-WME')
       .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.UUID)
-      .setCharacteristic(this.platform.Characteristic.Name, this._config.name ?? 'Fireplace');
+      .setCharacteristic(this.platform.Characteristic.Name, this.config.name ?? 'Fireplace');
 
     this.heatingThresholdTemperatureCharacteristic()
       .setProps({
@@ -53,18 +53,18 @@ export class ServiceController implements IServiceController {
       });
   }
 
-  activeCharacteristic = () => this._service.getCharacteristic(this.platform.Characteristic.Active);
+  activeCharacteristic = () => this.service.getCharacteristic(this.platform.Characteristic.Active);
 
-  currentHeaterCoolerStateCharacteristic = () => this._service.getCharacteristic(this.platform.Characteristic.CurrentHeaterCoolerState);
+  currentHeaterCoolerStateCharacteristic = () => this.service.getCharacteristic(this.platform.Characteristic.CurrentHeaterCoolerState);
 
-  targetHeaterCoolerStateCharacteristic = () => this._service.getCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState);
+  targetHeaterCoolerStateCharacteristic = () => this.service.getCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState);
 
-  currentTemperatureCharacteristic = () => this._service.getCharacteristic(this.platform.Characteristic.CurrentTemperature);
+  currentTemperatureCharacteristic = () => this.service.getCharacteristic(this.platform.Characteristic.CurrentTemperature);
 
-  lockControlsCharacteristic = () => this._service.getCharacteristic(this.platform.Characteristic.LockPhysicalControls);
+  lockControlsCharacteristic = () => this.service.getCharacteristic(this.platform.Characteristic.LockPhysicalControls);
 
-  swingModeCharacteristic = () => this._service.getCharacteristic(this.platform.Characteristic.SwingMode);
+  swingModeCharacteristic = () => this.service.getCharacteristic(this.platform.Characteristic.SwingMode);
 
   heatingThresholdTemperatureCharacteristic = () =>
-    this._service.getCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature);
+    this.service.getCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature);
 }
