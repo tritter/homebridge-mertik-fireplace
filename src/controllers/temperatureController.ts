@@ -4,9 +4,9 @@ import { OperationMode } from '../models/operationMode';
 import { IFireplaceController } from './fireplaceController';
 
 export interface ITemperatureController {
-    startRegulatingTemperature(): void;
-    stopRegulatingTemperature(): void;
-  }
+  startRegulatingTemperature(): void;
+  stopRegulatingTemperature(): void;
+}
 
 export class TemperatureController implements ITemperatureController {
   private listener: ((status: FireplaceStatus) => void) | undefined;
@@ -15,18 +15,15 @@ export class TemperatureController implements ITemperatureController {
   private static TEMPERATURE_THRESHOLD = 0.5;
 
   constructor(
-        public readonly log: Logger,
-        public readonly fireplace: IFireplaceController) {
+    public readonly log: Logger,
+    public readonly fireplace: IFireplaceController) {
   }
-
 
   public startRegulatingTemperature(): void {
     if (this.listener) {
       return;
     }
-
     this.stopRegulatingTemperature();
-
     this.log.debug('Start regulate');
 
     this.listener = this.regulateTemperature.bind(this);
@@ -42,7 +39,6 @@ export class TemperatureController implements ITemperatureController {
   }
 
   regulateTemperature(status: FireplaceStatus) {
-    this.log.debug('REGULATE STATUS UPDATE');
     if (status.mode !== OperationMode.Temperature) {
       this.log.debug('No regulation needed: No temperature mode.');
       return;
