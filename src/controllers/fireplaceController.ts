@@ -12,6 +12,7 @@ export interface IFireplaceController {
   request(request: IRequest): Promise<boolean>;
   status(): FireplaceStatus | undefined;
   reachable(): boolean;
+  setTemperature(temperature: number): void;
 }
 
 export interface IFireplaceEvents {
@@ -27,6 +28,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
   private _lastStatus: FireplaceStatus | undefined;
   private _igniting = false;
   private _shuttingDown = false;
+  private readonly temperatureController: ITemperatureController;
   private static UNREACHABLE_TIMEOUT = 1000 * 60 * 1; //1 min
   private static REFRESH_TIMEOUT = 1000 * 15; //15 seconds
 
@@ -35,6 +37,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
     public readonly accessory: PlatformAccessory) {
     super();
     this._config = accessory.context.device;
+    this.temperatureController = new TemperatureController(this.log, this);
     this.startStatusSubscription();
   }
 
@@ -68,6 +71,9 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
     this._shuttingDown = newStatus.shuttingDown;
     this._lastStatus = newStatus;
     this.emit('status', this._lastStatus);
+    if (newStatus.mode === OperationMode.Temperature) {
+      this.temperatureController.startRegulatingTemperature();
+    }
   }
 
   private async igniteFireplace() {
@@ -171,6 +177,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
   }
 
   async setTemperature(temperature: number) {
+    this.temperatureController.stopRegulatingTemperature();
     this.log.info(`Set temperature to ${temperature}`);
     if ((this._lastStatus?.currentTemperature || 0) < temperature) {
       this.setManualMode();
@@ -203,6 +210,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
       return true;
     }
     this.log.info(`Set mode to: ${OperationMode[mode]}`);
+    this.temperatureController.stopRegulatingTemperature();
     switch(mode) {
       case OperationMode.Manual:
         this.setManualMode();
