@@ -12,7 +12,7 @@ export class TemperatureController implements ITemperatureController {
   private listener: ((status: FireplaceStatus) => void) | undefined;
   private lastRegulation: Date = new Date();
   private static REGULATION_TIMEOUT = 1000 * 60 * 20; //20 min
-  private static TEMPERATURE_THRESHOLD = 0.5;
+  private static TEMPERATURE_THRESHOLD = 2;
 
   constructor(
     public readonly log: Logger,
