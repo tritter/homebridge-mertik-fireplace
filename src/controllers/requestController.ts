@@ -5,7 +5,7 @@ import { IRequest } from '../models/request';
 import { IFireplaceController } from './fireplaceController';
 
 export interface IRequestController {
-  locked: boolean;
+  isLocked(): boolean;
   unlock(): void;
   lock(): void;
   setFlameHeight(height: FlameHeight): void;
@@ -26,6 +26,10 @@ export class RequestController implements IRequestController{
     public readonly fireplace: IFireplaceController,
     public locked = false) {
 
+  }
+
+  public isLocked(): boolean {
+    return this.locked || this.sendTask !== null;
   }
 
   private isAllowed(): boolean {
@@ -84,7 +88,7 @@ export class RequestController implements IRequestController{
 
     const mergedRequest = this.scheduledRequest ? {...this.scheduledRequest, ...request} : request;
     this.scheduledRequest = mergedRequest;
-    this.sendTask = setInterval(() => this.sendRequest(mergedRequest), 5_000);
+    this.sendTask = setTimeout(() => this.sendRequest(mergedRequest), 5_000);
   }
 
   private async sendRequest(request: IRequest, retry = false) {

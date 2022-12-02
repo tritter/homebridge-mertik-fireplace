@@ -70,7 +70,7 @@ export class FireplacePlatformAccessory {
       });
 
     this.service.lockControlsCharacteristic()
-      .onGet(() => this.request.locked)
+      .onGet(() => this.request.isLocked())
       .onSet((value) => value === this.platform.Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED ?
         this.request.lock() : this.request.unlock());
 
