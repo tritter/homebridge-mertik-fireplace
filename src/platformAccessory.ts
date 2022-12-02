@@ -20,7 +20,7 @@ export class FireplacePlatformAccessory {
 
   constructor(
     private readonly platform: MertikPlatform,
-    private readonly accessory: PlatformAccessory,
+    accessory: PlatformAccessory,
   ) {
     this.fireplace = new FireplaceController(platform.log, accessory);
     this.service = new ServiceController(platform.log, accessory, platform);
