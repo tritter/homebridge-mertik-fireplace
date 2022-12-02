@@ -239,8 +239,9 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
 
   async request(request: IRequest): Promise<boolean> {
     let succeeds = true;
+    const currentMode = this.lastStatus?.mode || OperationMode.Off;
     this.stopStatusSubscription();
-    if (request.mode) {
+    if (request.mode && request.mode !== currentMode) {
       succeeds = await this.setMode(request);
     } else if (request.temperature && request.mode === OperationMode.Temperature) {
       await this.setTemperature(request.temperature);
