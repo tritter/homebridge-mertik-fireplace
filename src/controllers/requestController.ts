@@ -29,7 +29,7 @@ export class RequestController implements IRequestController{
   }
 
   public isLocked(): boolean {
-    return this.locked || this.lockTask !== null;
+    return this.locked || this.lockTask !== undefined;
   }
 
   private isAllowed(): boolean {
