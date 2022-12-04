@@ -29,7 +29,7 @@ export class RequestController implements IRequestController{
   }
 
   public isLocked(): boolean {
-    return this.locked || this.sendTask !== null;
+    return this.locked || this.lockTask !== null;
   }
 
   private isAllowed(): boolean {
@@ -48,8 +48,9 @@ export class RequestController implements IRequestController{
   lock() {
     this.clearScheduledLock();
     this.log.info('Lock control after 1 minute (makes sure that automations still run through.');
-    this.sendTask = setTimeout(() => {
-      this.locked = true; this.log.info('Locked controls');
+    this.lockTask = setTimeout(() => {
+      this.locked = true;
+      this.log.info('Locked controls');
     }, 60_000);
   }
 
