@@ -181,12 +181,10 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
   public async setTemperature(temperature: number) {
     this.temperatureController.stopRegulatingTemperature();
     this.log.info(`Set temperature to ${temperature}`);
-    if ((this.lastStatus?.currentTemperature || 0) < temperature) {
-      this.setManualMode();
-      await this.delay(1_000);
-      this.resetFlameHeight();
-      await this.delay(10_000);
-    }
+    this.setManualMode();
+    await this.delay(1_000);
+    this.resetFlameHeight();
+    await this.delay(10_000);
     this.setTemperatureMode();
     await this.delay(1_000);
     const value = TemperatureRangeUtils.toBits(temperature);
