@@ -239,21 +239,27 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
     let succeeds = true;
     const currentMode = this.lastStatus?.mode || OperationMode.Off;
     this.stopStatusSubscription();
-    if (request.mode && request.mode !== currentMode) {
+    if (request.mode !== undefined
+      && request.mode !== currentMode) {
       succeeds = await this.setMode(request);
-    } else if (request.temperature && request.mode === OperationMode.Temperature) {
+    } else if (request.temperature !== undefined
+      && request.mode === OperationMode.Temperature) {
       await this.setTemperature(request.temperature);
-    } else if (request.height && (request.mode === OperationMode.Manual || request.mode === OperationMode.Eco)) {
+    } else if (request.height !== undefined
+       && (request.mode === OperationMode.Manual || request.mode === OperationMode.Eco)) {
       await this.setFlameHeight(request.height);
-    } else if (request.temperature
+    } else if (request.temperature !== undefined
       && this.lastStatus?.mode === OperationMode.Temperature) {
       await this.setTemperature(request.temperature);
-    } else if (request.height && (this.lastStatus?.mode === OperationMode.Manual || this.lastStatus?.mode === OperationMode.Eco)) {
+    } else if (request.height !== undefined
+      && (this.lastStatus?.mode === OperationMode.Manual || this.lastStatus?.mode === OperationMode.Eco)) {
       await this.setFlameHeight(request.height);
-    } else if (request.auxOn) {
-      this.setAux(request.auxOn);
     }
     await this.delay(5_000);
+    if (request.auxOn !== undefined) {
+      this.setAux(request.auxOn);
+      await this.delay(5_000);
+    }
     this.startStatusSubscription();
     return succeeds;
   }
