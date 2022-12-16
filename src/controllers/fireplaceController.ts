@@ -7,7 +7,6 @@ import { FlameHeight } from '../models/flameHeight';
 import { Logger, PlatformAccessory } from 'homebridge';
 import { TemperatureRangeUtils } from '../models/temperatureRange';
 import { IRequest } from '../models/request';
-import { ITemperatureController, TemperatureController } from './temperatureController';
 
 export interface IFireplaceController extends EventEmitter {
   request(request: IRequest): Promise<boolean>;
@@ -23,7 +22,6 @@ export interface IFireplaceEvents {
 
 export class FireplaceController extends EventEmitter implements IFireplaceController, IFireplaceEvents {
   private readonly config: IDeviceConfig;
-  private readonly temperatureController: ITemperatureController;
   private height = FlameHeight.Step11;
   private statusTimer: NodeJS.Timer | undefined;
   private client: Socket | null = null;
@@ -38,7 +36,6 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
     public readonly log: Logger,
     public readonly accessory: PlatformAccessory) {
     super();
-    this.temperatureController = new TemperatureController(this.log, this);
     this.config = this.accessory.context.device;
     this.startStatusSubscription();
   }
@@ -73,9 +70,6 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
     this.shuttingDown = newStatus.shuttingDown;
     this.lastStatus = newStatus;
     this.emit('status', this.lastStatus);
-    if (newStatus.mode === OperationMode.Temperature) {
-      this.temperatureController.startRegulatingTemperature();
-    }
   }
 
   private async igniteFireplace() {
@@ -179,7 +173,6 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
   }
 
   public async setTemperature(temperature: number) {
-    this.temperatureController.stopRegulatingTemperature();
     this.log.info(`Set temperature to ${temperature}`);
     this.setManualMode();
     await this.delay(1_000);
@@ -210,7 +203,6 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
       return true;
     }
     this.log.info(`Set mode to: ${OperationMode[mode]}`);
-    this.temperatureController.stopRegulatingTemperature();
     switch(mode) {
       case OperationMode.Manual:
         this.setManualMode();
