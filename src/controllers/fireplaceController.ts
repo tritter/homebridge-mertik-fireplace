@@ -249,6 +249,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
     }
     await this.delay(5_000);
     if (request.auxOn !== undefined) {
+      await this.delay(8_000);
       this.setAux(request.auxOn);
       await this.delay(5_000);
     }
