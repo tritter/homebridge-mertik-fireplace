@@ -1,7 +1,7 @@
 {
   "displayName": "Mertik Fireplace",
   "name": "homebridge-mertik-fireplace",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "description": "Controls Mertik Fireplace Wifi controllers, connecting real fire with Homebridge.",
   "license": "Apache-2.0",
   "repository": {
