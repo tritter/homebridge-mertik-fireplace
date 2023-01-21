@@ -31,7 +31,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
   private igniting = false;
   private shuttingDown = false;
   private lostConnection = false;
-  private static UNREACHABLE_TIMEOUT = 1000 * 60 * 1; //1 min
+  private static UNREACHABLE_TIMEOUT = 1000 * 60 * 5; //5 min
   private static REFRESH_TIMEOUT = 1000 * 15; //15 seconds
 
   constructor(
