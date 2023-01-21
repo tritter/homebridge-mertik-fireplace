@@ -45,6 +45,9 @@ export class FireplacePlatformAccessory {
       this.updateSwingMode(status);
       this.updateHeatingThresholdTemperature(status);
     });
+    this.fireplace.on('reachable', (reachable) =>{
+      this.updateReachable(reachable);
+    });
   }
 
   subscribeService() {
@@ -83,6 +86,8 @@ export class FireplacePlatformAccessory {
       .onSet((value) => {
         this.request.setTemperature(value as number);
       });
+    this.service.reachableCharacteristic()
+      .onGet(() => this.reachableValue(this.fireplace.reachable()));
   }
 
   private getStatus(): FireplaceStatus {
@@ -98,6 +103,10 @@ export class FireplacePlatformAccessory {
   }
 
   // Update handlers
+
+  private updateReachable(reachable: boolean) {
+    this.service.reachableCharacteristic().updateValue(this.reachableValue(reachable));
+  }
 
   private updateActive(status: FireplaceStatus) {
     this.service.activeCharacteristic().updateValue(this.activeValue(status));
@@ -124,6 +133,11 @@ export class FireplacePlatformAccessory {
   }
 
   // CharacteristicValues
+
+  private reachableValue(reachable: boolean): CharacteristicValue {
+    return reachable ? this.platform.Characteristic.ContactSensorState.CONTACT_DETECTED
+      : this.platform.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
+  }
 
   private activeValue(status: FireplaceStatus): CharacteristicValue {
     const currentRequest = this.request.currentRequest();

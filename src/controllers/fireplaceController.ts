@@ -18,6 +18,7 @@ export interface IFireplaceController extends EventEmitter {
 
 export interface IFireplaceEvents {
   on(event: 'status', listener: (status: FireplaceStatus) => void): this;
+  on(event: 'reachable', listener: (reachable: boolean) => void): this;
 }
 
 export class FireplaceController extends EventEmitter implements IFireplaceController, IFireplaceEvents {
@@ -29,6 +30,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
   private lastStatus: FireplaceStatus | undefined;
   private igniting = false;
   private shuttingDown = false;
+  private lostConnection = false;
   private static UNREACHABLE_TIMEOUT = 1000 * 60 * 1; //1 min
   private static REFRESH_TIMEOUT = 1000 * 15; //15 seconds
 
@@ -56,6 +58,17 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
   }
 
   private refreshStatus() {
+    const isReachable = this.reachable();
+    this.emit('reachable', isReachable);
+
+    if (this.lastStatus) {
+      // Security mechanisnm to turn off fireplace when we had contcat before.
+      this.lostConnection = !isReachable;
+      if (this.lostConnection){
+        this.log.error('Lost contact!');
+      }
+    }
+
     try {
       this.sendCommand('303303');
     } catch {
@@ -70,6 +83,10 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
     this.shuttingDown = newStatus.shuttingDown;
     this.lastStatus = newStatus;
     this.emit('status', this.lastStatus);
+    if (this.lostConnection) {
+      // Make sure to turn it off, as we are not sure which state we are in.
+      this.guardFlameOff();
+    }
   }
 
   private async igniteFireplace() {
@@ -145,9 +162,6 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
   }
 
   reachable(): boolean {
-    if (!this.lastContact) {
-      return false;
-    }
     const now = new Date().getTime();
     const last = this.lastContact.getTime();
     return (now - last) < FireplaceController.UNREACHABLE_TIMEOUT;

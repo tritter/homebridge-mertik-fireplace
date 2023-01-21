@@ -3,6 +3,7 @@ import { IDeviceConfig } from '../models/deviceConfig';
 import { MertikPlatform } from '../platform';
 
 export interface IServiceController {
+  reachableCharacteristic(): Characteristic;
     activeCharacteristic(): Characteristic;
     currentHeaterCoolerStateCharacteristic(): Characteristic;
     targetHeaterCoolerStateCharacteristic(): Characteristic;
@@ -15,6 +16,7 @@ export interface IServiceController {
 export class ServiceController implements IServiceController {
   private readonly config: IDeviceConfig;
   private readonly service: Service;
+  private readonly reachableService: Service;
 
   constructor(
         public readonly log: Logger,
@@ -23,6 +25,8 @@ export class ServiceController implements IServiceController {
     this.config = this.accessory.context.device;
     this.service = this.accessory.getService(this.platform.Service.HeaterCooler)
       || this.accessory.addService(this.platform.Service.HeaterCooler);
+    this.reachableService = this.accessory.getService(this.platform.Service.ContactSensor)
+      || this.accessory.addService(this.platform.Service.ContactSensor);
     this.initCharacteristics();
   }
 
@@ -38,6 +42,8 @@ export class ServiceController implements IServiceController {
       .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.UUID)
       .setCharacteristic(this.platform.Characteristic.Name, this.config.name ?? 'Fireplace');
 
+    this.reachableService.setCharacteristic(this.platform.Characteristic.Name, 'Connected');
+
     this.heatingThresholdTemperatureCharacteristic()
       .setProps({
         minValue: 0.0,
@@ -52,6 +58,8 @@ export class ServiceController implements IServiceController {
         maxValue: 100.0,
       });
   }
+
+  reachableCharacteristic = () => this.reachableService.getCharacteristic(this.platform.Characteristic.ContactSensorState);
 
   activeCharacteristic = () => this.service.getCharacteristic(this.platform.Characteristic.Active);
 
