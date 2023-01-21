@@ -121,7 +121,7 @@ export class FireplacePlatformAccessory {
   }
 
   private updateCurrentTemperature(status: FireplaceStatus) {
-    this.service.currentTemperatureCharacteristic().updateValue(status.currentTemperature);
+    this.service.currentTemperatureCharacteristic().updateValue(status.currentTemperature > 100 ? 20 : status.currentTemperature);
   }
 
   private updateSwingMode(status: FireplaceStatus) {
