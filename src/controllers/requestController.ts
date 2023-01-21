@@ -83,7 +83,7 @@ export class RequestController implements IRequestController{
 
     const mergedRequest = this.scheduledRequest ? {...this.scheduledRequest, ...request} : request;
     this.scheduledRequest = mergedRequest;
-    this.sendTask = setTimeout(() => this.sendRequest(mergedRequest), 5_000);
+    this.sendTask = setTimeout(() => this.sendRequest(mergedRequest), 10_000);
   }
 
   private async sendRequest(request: IRequest, retry = false) {
@@ -92,7 +92,7 @@ export class RequestController implements IRequestController{
     }
     if (!this.isAllowed()) {
       if (!retry) {
-        setTimeout(() => this.sendRequest(request, true), 5_000);
+        setTimeout(() => this.sendRequest(request, true), 10_000);
         return;
       }
 
