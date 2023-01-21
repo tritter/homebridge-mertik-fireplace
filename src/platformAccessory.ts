@@ -81,9 +81,6 @@ export class FireplacePlatformAccessory {
     this.service.heatingThresholdTemperatureCharacteristic()
       .onGet(() => this.targetHeatingThresholdValue(this.getStatus()))
       .onSet((value) => {
-        const percentage = ((value as number) - 5) / 31;
-        this.platform.log.debug(`Set flame height to percentage: ${percentage}`);
-        this.request.setFlameHeight(FlameHeightUtils.ofPercentage(percentage));
         this.request.setTemperature(value as number);
       });
   }

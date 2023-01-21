@@ -1,5 +1,4 @@
 import { Logger } from 'homebridge';
-import { FlameHeight } from '../models/flameHeight';
 import { OperationMode } from '../models/operationMode';
 import { IRequest } from '../models/request';
 import { IFireplaceController } from './fireplaceController';
@@ -8,7 +7,6 @@ export interface IRequestController {
   isLocked(): boolean;
   unlock(): void;
   lock(): void;
-  setFlameHeight(height: FlameHeight): void;
   setAux(on: boolean): void;
   setMode(mode: OperationMode): void;
   setTemperature(temperature: number): void;
@@ -59,10 +57,6 @@ export class RequestController implements IRequestController{
     this.locked = false;
     this.log.info('Unlocked controls');
 
-  }
-
-  setFlameHeight(height: FlameHeight) {
-    this.scheduleRequest({height});
   }
 
   setAux(on: boolean) {
@@ -116,4 +110,3 @@ export class RequestController implements IRequestController{
     this.busy = false;
   }
 }
-

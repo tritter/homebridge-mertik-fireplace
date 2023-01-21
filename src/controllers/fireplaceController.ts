@@ -3,7 +3,7 @@ import EventEmitter from 'events';
 import net, { Socket } from 'net';
 import { FireplaceStatus } from '../models/fireplaceStatus';
 import { OperationMode, OperationModeUtils } from '../models/operationMode';
-import { FlameHeight } from '../models/flameHeight';
+import { FlameHeight, FlameHeightUtils } from '../models/flameHeight';
 import { Logger, PlatformAccessory } from 'homebridge';
 import { TemperatureRangeUtils } from '../models/temperatureRange';
 import { IRequest } from '../models/request';
@@ -83,6 +83,12 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
     this.refreshStatus();
   }
 
+  private async standBy() {
+    await this.setTemperatureValue(0);
+    const msg = '3136303003';
+    return this.sendCommand(msg);
+  }
+
   private async guardFlameOff() {
     if (this.shuttingDown) {
       this.log.debug('Ignore already shutting down!');
@@ -158,7 +164,10 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
     this.sendCommand(msg);
   }
 
-  async setFlameHeight(height: FlameHeight) {
+  async setFlameHeight(temperature: number) {
+    const percentage = ((temperature) - 5) / 31;
+    this.log.debug(`Set flame height to percentage: ${percentage}`);
+    const height = FlameHeightUtils.ofPercentage(percentage);
     this.log.info(`Set flame height to ${height.toString()}`);
     this.height = height;
     this.resetFlameHeight();
@@ -180,6 +189,10 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
     await this.delay(10_000);
     this.setTemperatureMode();
     await this.delay(1_000);
+    await this.setTemperatureValue(temperature);
+  }
+
+  private async setTemperatureValue(temperature: number) {
     const value = TemperatureRangeUtils.toBits(temperature);
     const msg = '42324644303' + value + '03';
     this.sendCommand(msg);
@@ -203,17 +216,18 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
       return true;
     }
     this.log.info(`Set mode to: ${OperationMode[mode]}`);
+    const targetTemperature = this.lastStatus?.targetTemperature ?? 20;
     switch(mode) {
       case OperationMode.Manual:
         this.setManualMode();
-        this.setFlameHeight(FlameHeight.Step11);
+        this.setFlameHeight(targetTemperature);
         break;
       case OperationMode.Eco:
-        this.setFlameHeight(FlameHeight.Step11);
+        this.setFlameHeight(targetTemperature);
         this.setEcoMode();
         break;
       case OperationMode.Temperature:
-        this.setTemperature(request.temperature ?? this.lastStatus?.targetTemperature ?? 20);
+        this.setTemperature(targetTemperature);
         break;
       case OperationMode.Off:
         await this.guardFlameOff();
@@ -235,17 +249,20 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
       && request.mode !== currentMode) {
       succeeds = await this.setMode(request);
     } else if (request.temperature !== undefined
-      && request.mode === OperationMode.Temperature) {
-      await this.setTemperature(request.temperature);
-    } else if (request.height !== undefined
-       && (request.mode === OperationMode.Manual || request.mode === OperationMode.Eco)) {
-      await this.setFlameHeight(request.height);
+      && (request.mode === OperationMode.Temperature || this.lastStatus?.mode === OperationMode.Temperature)) {
+      if (request.temperature <= 0.0) {
+        await this.standBy();
+      } else {
+        await this.setTemperature(request.temperature);
+      }
     } else if (request.temperature !== undefined
-      && this.lastStatus?.mode === OperationMode.Temperature) {
-      await this.setTemperature(request.temperature);
-    } else if (request.height !== undefined
-      && (this.lastStatus?.mode === OperationMode.Manual || this.lastStatus?.mode === OperationMode.Eco)) {
-      await this.setFlameHeight(request.height);
+       && (request.mode === OperationMode.Manual || request.mode === OperationMode.Eco
+        || this.lastStatus?.mode === OperationMode.Manual || this.lastStatus?.mode === OperationMode.Eco)) {
+      if (request.temperature <= 0.0) {
+        await this.standBy();
+      } else {
+        await this.setFlameHeight(request.temperature);
+      }
     }
     await this.delay(5_000);
     if (request.auxOn !== undefined) {
