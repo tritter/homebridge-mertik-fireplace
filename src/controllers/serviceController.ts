@@ -40,7 +40,7 @@ export class ServiceController implements IServiceController {
 
     this.heatingThresholdTemperatureCharacteristic()
       .setProps({
-        minValue: 5.0,
+        minValue: 0.0,
         maxValue: 36,
         minStep: 0.5,
       });
