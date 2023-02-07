@@ -102,6 +102,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
   }
 
   private async standBy() {
+    this.log.info('Standby');
     await this.setTemperatureValue(0);
     const msg = '3136303003';
     return this.sendCommand(msg);
@@ -112,6 +113,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
       this.log.debug('Ignore already shutting down!');
       return;
     }
+    this.log.info('GuardFlame Off');
     this.shuttingDown = true;
     this.sendCommand('313003');
     await this.delay(30_000);
@@ -202,8 +204,10 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
     this.resetFlameHeight();
     await this.delay(5_000);
     this.setTemperatureMode();
-    await this.delay(5_000);
-    await this.setTemperatureValue(temperature);
+    if (this?.lastStatus?.targetTemperature !== temperature) {
+      await this.delay(5_000);
+      await this.setTemperatureValue(temperature);
+    }
   }
 
   private async setTemperatureValue(temperature: number) {
@@ -230,7 +234,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
       return true;
     }
     this.log.info(`Set mode to: ${OperationMode[mode]}`);
-    const targetTemperature = this.lastStatus?.targetTemperature ?? 20;
+    const targetTemperature = request.temperature ?? this.lastStatus?.targetTemperature ?? 20;
     switch(mode) {
       case OperationMode.Manual:
         this.setManualMode();
@@ -279,7 +283,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
       }
     }
     await this.delay(5_000);
-    if (request.auxOn !== undefined) {
+    if ((!request.temperature || request.temperature > 0.0) && request.auxOn !== undefined) {
       await this.delay(8_000);
       this.setAux(request.auxOn);
       await this.delay(5_000);
