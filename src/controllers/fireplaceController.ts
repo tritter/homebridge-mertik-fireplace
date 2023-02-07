@@ -201,9 +201,9 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
     this.setManualMode();
     await this.delay(1_000);
     this.resetFlameHeight();
-    await this.delay(10_000);
+    await this.delay(5_000);
     this.setTemperatureMode();
-    await this.delay(1_000);
+    await this.delay(5_000);
     await this.setTemperatureValue(temperature);
   }
 
