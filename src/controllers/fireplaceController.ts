@@ -139,8 +139,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
       this.client.connect(2000, ip);
       this.client.setTimeout(FireplaceController.REFRESH_TIMEOUT);
       this.client.on('data', (data) => {
-        const tempData = data.toString().substr(1).replace(/\r/g, ';');
-        this.log.debug('Data: ' + tempData);
+        const tempData = data.toString().substring(1, data.length - 1);
         if (tempData.length === FireplaceController.STATUS_PACKET_LENGTH) {
           this.processStatusResponse(tempData);
         }
