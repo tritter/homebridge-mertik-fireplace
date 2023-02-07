@@ -33,6 +33,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
   private lostConnection = false;
   private static UNREACHABLE_TIMEOUT = 1000 * 60 * 5; //5 min
   private static REFRESH_TIMEOUT = 1000 * 15; //15 seconds
+  private static STATUS_PACKET_LENGTH = 106; //characters
 
   constructor(
     public readonly log: Logger,
@@ -140,7 +141,7 @@ export class FireplaceController extends EventEmitter implements IFireplaceContr
       this.client.on('data', (data) => {
         const tempData = data.toString().substr(1).replace(/\r/g, ';');
         this.log.debug('Data: ' + tempData);
-        if (tempData.startsWith('30303030000')) {
+        if (tempData.length === FireplaceController.STATUS_PACKET_LENGTH) {
           this.processStatusResponse(tempData);
         }
       });
