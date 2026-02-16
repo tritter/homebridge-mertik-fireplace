@@ -4,29 +4,33 @@ import { MertikPlatform } from '../platform';
 
 export interface IServiceController {
   reachableCharacteristic(): Characteristic;
-    activeCharacteristic(): Characteristic;
-    currentHeaterCoolerStateCharacteristic(): Characteristic;
-    targetHeaterCoolerStateCharacteristic(): Characteristic;
-    currentTemperatureCharacteristic(): Characteristic;
-    lockControlsCharacteristic(): Characteristic;
-    swingModeCharacteristic(): Characteristic;
-    heatingThresholdTemperatureCharacteristic(): Characteristic;
+  activeCharacteristic(): Characteristic;
+  currentHeaterCoolerStateCharacteristic(): Characteristic;
+  targetHeaterCoolerStateCharacteristic(): Characteristic;
+  currentTemperatureCharacteristic(): Characteristic;
+  lockControlsCharacteristic(): Characteristic;
+  parentControlCharacteristic(): Characteristic;
+  swingModeCharacteristic(): Characteristic;
+  heatingThresholdTemperatureCharacteristic(): Characteristic;
 }
 
 export class ServiceController implements IServiceController {
   private readonly config: IDeviceConfig;
   private readonly service: Service;
   private readonly reachableService: Service;
+  private readonly parentControlService: Service;
 
   constructor(
-        public readonly log: Logger,
-        public readonly accessory: PlatformAccessory,
-        private readonly platform: MertikPlatform) {
+    public readonly log: Logger,
+    public readonly accessory: PlatformAccessory,
+    private readonly platform: MertikPlatform) {
     this.config = this.accessory.context.device;
     this.service = this.accessory.getService(this.platform.Service.HeaterCooler)
       || this.accessory.addService(this.platform.Service.HeaterCooler);
     this.reachableService = this.accessory.getService(this.platform.Service.ContactSensor)
       || this.accessory.addService(this.platform.Service.ContactSensor);
+    this.parentControlService = this.accessory.getService('Parent Control')
+      || this.accessory.addService(this.platform.Service.Switch, 'Parent Control', 'parent-control');
     this.initCharacteristics();
   }
 
@@ -43,6 +47,7 @@ export class ServiceController implements IServiceController {
       .setCharacteristic(this.platform.Characteristic.Name, this.config.name ?? 'Fireplace');
 
     this.reachableService.setCharacteristic(this.platform.Characteristic.Name, 'Connected');
+    this.parentControlService.setCharacteristic(this.platform.Characteristic.Name, 'Parent Control');
 
     this.heatingThresholdTemperatureCharacteristic()
       .setProps({
@@ -70,6 +75,8 @@ export class ServiceController implements IServiceController {
   currentTemperatureCharacteristic = () => this.service.getCharacteristic(this.platform.Characteristic.CurrentTemperature);
 
   lockControlsCharacteristic = () => this.service.getCharacteristic(this.platform.Characteristic.LockPhysicalControls);
+
+  parentControlCharacteristic = () => this.parentControlService.getCharacteristic(this.platform.Characteristic.On);
 
   swingModeCharacteristic = () => this.service.getCharacteristic(this.platform.Characteristic.SwingMode);
 
