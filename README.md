@@ -8,6 +8,9 @@
 
 [Homebridge](https://github.com/nfarina/homebridge) plugin for heating your place using the Mertik Fireplace WiFi controller.
 
+## Compatibility
+- Homebridge `1.11.x` and `2.0.0-beta.x`
+
 ## Features
 With this plugin you can turn your fireplace on using Siri and schedule cosiness with your 'Cosy Time' Scene! The plugin exposes a Heater inside Homekit with the following features:
 
@@ -22,6 +25,12 @@ With this plugin you can turn your fireplace on using Siri and schedule cosiness
 ### Install homebridge and this plugin
 ```
 [sudo] npm install -g --unsafe-perm homebridge
+[sudo] npm install -g --unsafe-perm homebridge-mertik-fireplace
+```
+
+### Homebridge v2 beta
+```
+[sudo] npm install -g --unsafe-perm homebridge@beta
 [sudo] npm install -g --unsafe-perm homebridge-mertik-fireplace
 ```
 

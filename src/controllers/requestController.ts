@@ -16,8 +16,8 @@ export interface IRequestController {
 export class RequestController implements IRequestController{
   private busy = false;
   private scheduledRequest?: IRequest;
-  private sendTask?: NodeJS.Timer;
-  private lockTask?: NodeJS.Timer;
+  private sendTask?: NodeJS.Timeout;
+  private lockTask?: NodeJS.Timeout;
 
   constructor(
     public readonly log: Logger,

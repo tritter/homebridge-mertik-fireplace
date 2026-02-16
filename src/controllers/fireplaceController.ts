@@ -24,7 +24,7 @@ export interface IFireplaceEvents {
 export class FireplaceController extends EventEmitter implements IFireplaceController, IFireplaceEvents {
   private readonly config: IDeviceConfig;
   private height = FlameHeight.Step11;
-  private statusTimer: NodeJS.Timer | undefined;
+  private statusTimer: NodeJS.Timeout | undefined;
   private client: Socket | null = null;
   private lastContact: Date = new Date();
   private lastStatus: FireplaceStatus | undefined;
