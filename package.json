@@ -12,8 +12,8 @@
     "url": "https://github.com/tritter/homebridge-mertik-fireplace/issues"
   },
   "engines": {
-    "node": ">=18.20.0",
-    "homebridge": "^1.11.0 || ^2.0.0-beta.0"
+    "node": ">=20.0.0",
+    "homebridge": "^1.11.0 || ^2.0.0"
   },
   "main": "dist/index.js",
   "scripts": {
@@ -26,18 +26,17 @@
     "homebridge-plugin"
   ],
   "peerDependencies": {
-    "homebridge": "^1.11.0 || ^2.0.0-beta.0"
+    "homebridge": "^1.11.0 || ^2.0.0"
   },
-  "dependencies": {},
   "devDependencies": {
-    "@types/node": "^22.13.4",
-    "@typescript-eslint/eslint-plugin": "^8.24.1",
-    "@typescript-eslint/parser": "^8.24.1",
-    "eslint": "^9.20.1",
-    "homebridge": "^2.0.0-beta.0",
-    "nodemon": "^3.1.9",
+    "@types/node": "^22.20.5",
+    "@typescript-eslint/eslint-plugin": "^8.72.0",
+    "@typescript-eslint/parser": "^8.72.0",
+    "eslint": "^10.13.0",
+    "homebridge": "^2.4.0",
+    "nodemon": "^3.1.14",
     "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.9.3"
   }
 }

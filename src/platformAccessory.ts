@@ -30,7 +30,7 @@ export class FireplacePlatformAccessory {
   }
 
   private isLocked(): boolean {
-    return this.service.lockControlsCharacteristic()?.value === this.platform.Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED;
+    return !!this.service.parentControlCharacteristic()?.value;
   }
 
   subscribeFireplace() {
@@ -72,10 +72,9 @@ export class FireplacePlatformAccessory {
         this.request.setMode(OperationModeUtils.ofHeaterCoolerState(this.platform, value));
       });
 
-    this.service.lockControlsCharacteristic()
+    this.service.parentControlCharacteristic()
       .onGet(() => this.request.isLocked())
-      .onSet((value) => value === this.platform.Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED ?
-        this.request.lock() : this.request.unlock());
+      .onSet((value) => this.setParentControl(!!value));
 
     this.service.swingModeCharacteristic()
       .onGet(() => this.swingModeValue(this.getStatus()))
@@ -88,6 +87,8 @@ export class FireplacePlatformAccessory {
       });
     this.service.reachableCharacteristic()
       .onGet(() => this.reachableValue(this.fireplace.reachable()));
+
+    this.syncParentControlState();
   }
 
   private getStatus(): FireplaceStatus {
@@ -130,6 +131,20 @@ export class FireplacePlatformAccessory {
 
   private updateHeatingThresholdTemperature(status: FireplaceStatus) {
     this.service.heatingThresholdTemperatureCharacteristic().updateValue(this.targetHeatingThresholdValue(status));
+  }
+
+  private syncParentControlState() {
+    const locked = this.request.isLocked();
+    this.service.parentControlCharacteristic().updateValue(locked);
+  }
+
+  private setParentControl(locked: boolean) {
+    if (locked) {
+      this.request.lock();
+    } else {
+      this.request.unlock();
+    }
+    this.syncParentControlState();
   }
 
   // CharacteristicValues
